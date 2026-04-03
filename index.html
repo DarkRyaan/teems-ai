@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My AI Chat</title>
+  <title>AI chat with Polly</title>
 
-  <!-- Teams-like favicon -->
-  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Microsoft_Teams_Logo_%282018-present%29.svg">
+  <!-- Tab favicon -->
+  <link rel="icon" href="https://th.bing.com/th/id/OIP.XdawTHCLYh1Lc_EvdV9JyAHaG-?w=179&h=180&c=7&r=0&o=7&dpr=2&pid=1.7&rm=3">
 
   <!-- Markdown parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -18,10 +18,35 @@
       text-align: center;
     }
 
+    /* LOGIN STYLING */
     #login {
-      margin-top: 100px;
+      margin-top: 120px;
     }
 
+    #login input {
+      padding: 14px;
+      width: 260px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 10px;
+    }
+
+    #login button {
+      padding: 12px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+    }
+
+    #login button:hover {
+      background: #16a34a;
+    }
+
+    /* CHAT STYLING */
     #chat {
       width: 420px;
       margin: 20px auto;
@@ -104,12 +129,14 @@
 
 <body>
 
+<!-- LOGIN -->
 <div id="login">
   <h2>Enter Access</h2>
   <input type="password" id="password" placeholder="Password" />
   <button onclick="setCookieAndCheck()">Enter</button>
 </div>
 
+<!-- CHAT -->
 <div id="chat" style="display:none;">
   <div id="header">My AI Chat 💬</div>
   <div id="messages"></div>
