@@ -58,6 +58,9 @@ body {
 }
 
 #messages {
+  display: flex;
+  flex-direction: column;  /* Stack vertically */
+  gap: 8px;                /* spacing between messages */
   height: 350px;
   overflow-y: auto;
   padding: 10px;
@@ -66,25 +69,21 @@ body {
 
 .message {
   padding: 10px;
-  margin: 8px 0;
   border-radius: 12px;
   max-width: 75%;
-  display: block;             /* Stack vertically */
-  clear: both;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap;
 }
 
 .user { 
-  background: #3b82f6; 
-  margin-left: auto; 
-  margin-right: 0;
+  align-self: flex-end;    /* right side */
+  background: #3b82f6;
 }
 
 .ai { 
-  background: #334155; 
-  margin-left: 0;
+  align-self: flex-start;  /* left side */
+  background: #334155;
 }
 
 #inputArea {
