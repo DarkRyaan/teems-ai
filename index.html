@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <title>My AI Chat</title>
 
+  <!-- Teams-like favicon -->
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/8/83/Microsoft_Teams_Logo_%282018-present%29.svg">
+
   <!-- Markdown parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -17,12 +20,6 @@
 
     #login {
       margin-top: 100px;
-    }
-
-    #login input {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
     }
 
     #chat {
@@ -57,19 +54,10 @@
       word-wrap: break-word;
     }
 
-    .user {
-      background: #3b82f6;
-      margin-left: auto;
-    }
+    .user { background: #3b82f6; margin-left: auto; }
+    .ai { background: #334155; }
 
-    .ai {
-      background: #334155;
-    }
-
-    .typing {
-      opacity: 0.7;
-      font-style: italic;
-    }
+    .typing { opacity: 0.7; font-style: italic; }
 
     #inputArea {
       display: flex;
@@ -77,7 +65,7 @@
       gap: 5px;
     }
 
-    #inputArea textarea {
+    textarea {
       flex: 1;
       padding: 10px;
       border-radius: 8px;
@@ -94,44 +82,36 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #16a34a;
+    button:hover { background: #16a34a; }
+
+    pre {
+      background: #000;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    code {
+      color: #22c55e;
     }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(5px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
-    .message table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    .message td, .message th {
-      border: 1px solid #555;
-      padding: 5px;
-    }
-
-    .message strong {
-      color: #22c55e;
-    }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h2>Enter Access</h2>
-  <p id="loginMsg"></p>
   <input type="password" id="password" placeholder="Password" />
   <button onclick="setCookieAndCheck()">Enter</button>
 </div>
 
-<!-- CHAT -->
 <div id="chat" style="display:none;">
-  <div id="header">My AI Chat</div>
+  <div id="header">My AI Chat 💬</div>
   <div id="messages"></div>
   <div id="inputArea">
     <textarea id="userInput" placeholder="Type a message..."></textarea>
@@ -140,9 +120,17 @@
 </div>
 
 <script>
-let chatHistory = [];
+let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
 
-// ✅ Check cookie
+// Load old messages
+function loadHistory() {
+  chatHistory.forEach(entry => {
+    const [sender, ...text] = entry.split(": ");
+    addMessage(text.join(": "), sender.toLowerCase());
+  });
+}
+
+// Cookie login
 function checkAccess() {
   const cookieValue = document.cookie
     .split("; ")
@@ -152,13 +140,10 @@ function checkAccess() {
   if (cookieValue === "NordVPN") {
     document.getElementById("login").style.display = "none";
     document.getElementById("chat").style.display = "block";
-  } else {
-    document.getElementById("login").style.display = "block";
-    document.getElementById("chat").style.display = "none";
+    loadHistory();
   }
 }
 
-// ✅ Set cookie
 function setCookieAndCheck() {
   const input = document.getElementById("password").value;
 
@@ -170,24 +155,23 @@ function setCookieAndCheck() {
   }
 }
 
-// ✨ Format text
+// Format text (markdown + emojis)
 function formatText(text) {
-  text = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
   return marked.parse(text);
 }
 
-// 💬 Add message
+// Add message
 function addMessage(text, sender) {
   const msg = document.createElement("div");
   msg.className = "message " + sender;
   msg.innerHTML = formatText(text);
-  document.getElementById("messages").appendChild(msg);
 
-  const messagesDiv = document.getElementById("messages");
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  document.getElementById("messages").appendChild(msg);
+  document.getElementById("messages").scrollTop =
+    document.getElementById("messages").scrollHeight;
 }
 
-// 🚀 Send message
+// Send message
 async function sendMessage() {
   const inputBox = document.getElementById("userInput");
   const message = inputBox.value.trim();
@@ -195,15 +179,15 @@ async function sendMessage() {
 
   addMessage(message, "user");
   chatHistory.push("User: " + message);
-  inputBox.value = "";
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
 
-  const messagesDiv = document.getElementById("messages");
+  inputBox.value = "";
 
   const typing = document.createElement("div");
   typing.className = "message ai typing";
   typing.id = "typing";
   typing.innerText = "AI is typing...";
-  messagesDiv.appendChild(typing);
+  document.getElementById("messages").appendChild(typing);
 
   try {
     const prompt = `
@@ -220,21 +204,23 @@ AI:
     );
 
     let reply = await response.text();
-    reply = reply.trim().replace(/\n{3,}/g, "\n\n");
+    reply = reply.trim();
 
     document.getElementById("typing").remove();
     addMessage(reply, "ai");
-    chatHistory.push("AI: " + reply);
 
-  } catch (err) {
+    chatHistory.push("AI: " + reply);
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+
+  } catch {
     document.getElementById("typing").remove();
     addMessage("⚠️ Error connecting to AI", "ai");
   }
 }
 
-// ⌨️ Enter key
+// Enter key
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("userInput").addEventListener("keydown", function(e) {
+  document.getElementById("userInput").addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -242,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ✅ On load
 window.addEventListener("load", checkAccess);
 </script>
 
