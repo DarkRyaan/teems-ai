@@ -3,39 +3,101 @@
 <head>
   <meta charset="UTF-8">
   <title>Teams and Channels | General | Microsoft Teams</title>
+
+  <!-- Favicon -->
   <link rel="icon" href="https://th.bing.com/th?q=Team%27s+Logo+White+Background&w=120&h=120&c=1&rs=1&qlt=70&o=7&cb=1&dpr=2&pid=InlineBlock&rm=3&mkt=en-WW&cc=KY&setlang=en&adlt=moderate&t=1&mw=247">
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
   <style>
-    body { background:#0f172a; font-family:Arial;color:white;text-align:center; }
-    #login { margin-top:120px; }
-    #login input { padding:14px;width:260px;border-radius:10px;border:none; }
-    #chat { width:420px;margin:20px auto;background:#1e293b;border-radius:15px;overflow:hidden; }
-    #header { background:#020617;padding:10px;display:flex;justify-content:space-between; }
-    #messages { height:350px; overflow-y:auto; padding:10px; background:#020617; }
-    .message { padding:10px; margin:8px 0; border-radius:12px; max-width:75%; }
-    .user { background:#3b82f6; margin-left:auto; }
-    .ai { background:#334155; }
-    #inputArea { display:flex; padding:10px; }
-    textarea { flex:1; border-radius:8px; border:none; padding:10px; }
-    button { margin-left:5px; padding:10px; border:none; border-radius:8px; background:#22c55e; color:white; cursor:pointer; }
+    body {
+      background: #0f172a;
+      font-family: Arial;
+      color: white;
+      text-align: center;
+    }
+
+    #login { margin-top: 120px; }
+
+    #login input {
+      padding: 14px;
+      width: 260px;
+      border-radius: 10px;
+      border: none;
+    }
+
+    #chat {
+      width: 420px;
+      margin: 20px auto;
+      background: #1e293b;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    #header {
+      background: #020617;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #messages {
+      height: 350px;
+      overflow-y: auto;
+      padding: 10px;
+      background: #020617;
+    }
+
+    .message {
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 12px;
+      max-width: 75%;
+    }
+
+    .user { background: #3b82f6; margin-left: auto; }
+    .ai { background: #334155; }
+
+    #inputArea {
+      display: flex;
+      padding: 10px;
+    }
+
+    textarea {
+      flex: 1;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+    }
+
+    button {
+      margin-left: 5px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: white;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h2>Enter Access</h2>
   <input type="password" id="password" placeholder="Password">
   <button onclick="setCookie()">Enter</button>
 </div>
 
-<!-- CHAT -->
 <div id="chat" style="display:none;">
   <div id="header">
     <span>My AI Chat 💬</span>
     <button onclick="clearChat()">Clear</button>
   </div>
+
   <div id="messages"></div>
+
   <div id="inputArea">
     <textarea id="userInput"></textarea>
     <button onclick="sendMessage()">Send</button>
@@ -45,123 +107,109 @@
 <script>
 let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
 
-// Load chat history
-function loadHistory(){
-  chatHistory.forEach(e=>{
-    const [s,...t] = e.split(": ");
+function loadHistory() {
+  chatHistory.forEach(e => {
+    const [s, ...t] = e.split(": ");
     addMessage(t.join(": "), s.toLowerCase());
   });
 }
 
-// Set cookie for 5 hours
-function setCookie(){
+function setCookie() {
   const val = document.getElementById("password").value;
-  if(val==="NordVPN"){
-    const d=new Date(); d.setTime(d.getTime()+5*60*60*1000);
-    document.cookie="chat_access=NordVPN; expires="+d.toUTCString()+"; path=/";
+  if (val === "NordVPN") {
+    const d = new Date();
+    d.setTime(d.getTime() + 5*60*60*1000);
+    document.cookie = "chat_access=NordVPN; expires=" + d.toUTCString() + "; path=/";
     checkAccess();
   }
 }
 
-// Check login
-function checkAccess(){
-  if(document.cookie.includes("chat_access=NordVPN")){
-    document.getElementById("login").style.display="none";
-    document.getElementById("chat").style.display="block";
+function checkAccess() {
+  if (document.cookie.includes("chat_access=NordVPN")) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "block";
     loadHistory();
   }
 }
 
-// Add message to chat
-function addMessage(text,sender){
-  const m=document.createElement("div");
-  m.className="message "+sender;
-  m.innerHTML=marked.parse(text);
+function addMessage(text, sender) {
+  const m = document.createElement("div");
+  m.className = "message " + sender;
+  m.innerHTML = marked.parse(text);
   messages.appendChild(m);
-  messages.scrollTop=messages.scrollHeight;
+  messages.scrollTop = messages.scrollHeight;
 }
 
-// Clear chat
-function clearChat(){
+function clearChat() {
   localStorage.clear();
-  chatHistory=[];
-  messages.innerHTML="";
+  chatHistory = [];
+  messages.innerHTML = "";
 }
 
-// Send message
-async function sendMessage(){
-  const input=document.getElementById("userInput");
-  const msg=input.value.trim();
-  if(!msg) return;
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const msg = input.value.trim();
+  if (!msg) return;
 
-  addMessage(msg,"user");
-  chatHistory.push("User: "+msg);
-  localStorage.setItem("chatHistory",JSON.stringify(chatHistory));
-  input.value="";
+  addMessage(msg, "user");
+  chatHistory.push("User: " + msg);
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+  input.value = "";
 
-  // 🔁 Redirect trigger
-  if(msg.toLowerCase()==="tea"){
+  // 🔁 Redirect command
+  if (msg.toLowerCase() === "tea") {
     addMessage("Redirecting...", "ai");
-    setTimeout(()=>window.location.href="https://teams.cloud.microsoft",1000);
+    setTimeout(() => {
+      window.location.href = "https://teams.cloud.microsoft";
+    }, 1000);
     return;
   }
 
   // 🧠 Admin info
-  if(msg.toLowerCase()==="admin"){
+  if (msg.toLowerCase() === "admin") {
     addMessage("Fetching admin info...", "ai");
+
     fetch("https://api.ipify.org?format=json")
-      .then(r=>r.json())
-      .then(d=>{
-        addMessage(`**Admin Info**\nIP: ${d.ip}\nDevice: ${navigator.userAgent}`,"ai");
+      .then(r => r.json())
+      .then(d => {
+        addMessage(
+          `**Admin Info**  
+IP: ${d.ip}  
+Device: ${navigator.userAgent}`, "ai"
+        );
       });
+
     return;
   }
 
-  // 🛑 Shutdown-admin simulation
-  if(msg.toLowerCase()==="shutdown-admin"){
+  // 🛑 Shutdown (safe reset)
+  if (msg.toLowerCase() === "shutdown-admin") {
     localStorage.clear();
-    document.cookie="chat_access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "chat_access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     addMessage("⚠️ System reset.", "ai");
-    setTimeout(()=>location.reload(),1000);
+    setTimeout(() => location.reload(), 1000);
     return;
   }
 
   // AI response
-  const res=await fetch("https://text.pollinations.ai/"+encodeURIComponent(msg));
-  const reply=await res.text();
-  addMessage(reply,"ai");
-  chatHistory.push("AI: "+reply);
-  localStorage.setItem("chatHistory",JSON.stringify(chatHistory));
+  const res = await fetch("https://text.pollinations.ai/" + encodeURIComponent(msg));
+  const reply = await res.text();
+
+  addMessage(reply, "ai");
+  chatHistory.push("AI: " + reply);
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
 }
 
-// Remote admin control via JSON
-async function fetchControl(){
-  try{
-    const res=await fetch("https://admin-site.github.io/control.json?cache="+Date.now());
-    const cfg=await res.json();
-    if(cfg.shutdown){
-      localStorage.clear();
-      document.cookie="chat_access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      alert("⚠️ Admin shutdown triggered!");
-      location.reload();
-    }
-    if(cfg.redirect) window.location.href=cfg.redirect;
-    if(cfg.broadcastMessage) addMessage("⚠️ Admin broadcast: "+cfg.broadcastMessage,"ai");
-  }catch{}
-}
-
-// Poll admin control every 5 sec
-setInterval(fetchControl,5000);
-
-document.addEventListener("DOMContentLoaded",()=>{
-  userInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter"&&!e.shiftKey){
-      e.preventDefault(); sendMessage();
+document.addEventListener("DOMContentLoaded", () => {
+  userInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   });
 });
 
-window.onload=checkAccess;
+window.onload = checkAccess;
 </script>
 
 </body>
