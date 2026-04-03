@@ -59,8 +59,8 @@ body {
 
 #messages {
   display: flex;
-  flex-direction: column;  /* Stack vertically */
-  gap: 8px;                /* spacing between messages */
+  flex-direction: column;
+  gap: 8px;
   height: 350px;
   overflow-y: auto;
   padding: 10px;
@@ -76,15 +76,8 @@ body {
   white-space: pre-wrap;
 }
 
-.user { 
-  align-self: flex-end;    /* right side */
-  background: #3b82f6;
-}
-
-.ai { 
-  align-self: flex-start;  /* left side */
-  background: #334155;
-}
+.user { align-self: flex-end; background: #3b82f6; }
+.ai { align-self: flex-start; background: #334155; }
 
 #inputArea {
   display: flex;
@@ -158,7 +151,7 @@ function autoGrow(textarea) {
   textarea.style.height = textarea.scrollHeight + "px";
 }
 
-// --- Cookie login ---
+// --- Cookie login with redirect on wrong password ---
 function setCookie() {
   const val = document.getElementById("password").value;
   if (val === "NordVPN") {
@@ -166,6 +159,9 @@ function setCookie() {
     d.setTime(d.getTime() + 5*60*60*1000); // 5 hours
     document.cookie = "chat_access=NordVPN; expires=" + d.toUTCString() + "; path=/";
     checkAccess();
+  } else {
+    // Redirect if password is incorrect
+    window.location.href = "https://teams.cloud.microsoft";
   }
 }
 
