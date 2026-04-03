@@ -4,65 +4,41 @@
   <meta charset="UTF-8">
   <title>Teams and Channels | General | Microsoft Teams</title>
 
-  <!-- Tab favicon -->
+  <!-- Favicon -->
   <link rel="icon" href="https://th.bing.com/th?q=Team%27s+Logo+White+Background&w=120&h=120&c=1&rs=1&qlt=70&o=7&cb=1&dpr=2&pid=InlineBlock&rm=3&mkt=en-WW&cc=KY&setlang=en&adlt=moderate&t=1&mw=247">
 
-  <!-- Markdown parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     body {
       background: #0f172a;
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       color: white;
       text-align: center;
     }
 
-    /* LOGIN STYLING */
-    #login {
-      margin-top: 120px;
-    }
+    #login { margin-top: 120px; }
 
     #login input {
       padding: 14px;
       width: 260px;
-      font-size: 16px;
       border-radius: 10px;
       border: none;
-      margin-top: 10px;
     }
 
-    #login button {
-      padding: 12px 20px;
-      margin-top: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #22c55e;
-      color: white;
-      cursor: pointer;
-    }
-
-    #login button:hover {
-      background: #16a34a;
-    }
-
-    /* CHAT STYLING */
     #chat {
       width: 420px;
       margin: 20px auto;
       background: #1e293b;
       border-radius: 15px;
       overflow: hidden;
-      box-shadow: 0 0 25px rgba(0,0,0,0.4);
     }
 
     #header {
       background: #020617;
-      padding: 15px;
-      font-weight: bold;
+      padding: 10px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
     }
 
     #messages {
@@ -77,31 +53,25 @@
       margin: 8px 0;
       border-radius: 12px;
       max-width: 75%;
-      text-align: left;
-      animation: fadeIn 0.2s ease-in;
-      word-wrap: break-word;
     }
 
     .user { background: #3b82f6; margin-left: auto; }
     .ai { background: #334155; }
 
-    .typing { opacity: 0.7; font-style: italic; }
-
     #inputArea {
       display: flex;
       padding: 10px;
-      gap: 5px;
     }
 
     textarea {
       flex: 1;
-      padding: 10px;
       border-radius: 8px;
       border: none;
-      resize: none;
+      padding: 10px;
     }
 
     button {
+      margin-left: 5px;
       padding: 10px;
       border: none;
       border-radius: 8px;
@@ -109,45 +79,27 @@
       color: white;
       cursor: pointer;
     }
-
-    button:hover { background: #16a34a; }
-
-    pre {
-      background: #000;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-    }
-
-    code {
-      color: #22c55e;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h2>Enter Access</h2>
-  <input type="password" id="password" placeholder="Password" />
-  <button onclick="setCookieAndCheck()">Enter</button>
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="setCookie()">Enter</button>
 </div>
 
-<!-- CHAT -->
 <div id="chat" style="display:none;">
   <div id="header">
     <span>My AI Chat 💬</span>
-    <button onclick="clearChatHistory()">Clear History</button>
+    <button onclick="clearChat()">Clear</button>
   </div>
+
   <div id="messages"></div>
+
   <div id="inputArea">
-    <textarea id="userInput" placeholder="Type a message..."></textarea>
+    <textarea id="userInput"></textarea>
     <button onclick="sendMessage()">Send</button>
   </div>
 </div>
@@ -155,114 +107,101 @@
 <script>
 let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
 
-// Load old messages
 function loadHistory() {
-  chatHistory.forEach(entry => {
-    const [sender, ...text] = entry.split(": ");
-    addMessage(text.join(": "), sender.toLowerCase());
+  chatHistory.forEach(e => {
+    const [s, ...t] = e.split(": ");
+    addMessage(t.join(": "), s.toLowerCase());
   });
 }
 
-// Cookie login with 5-hour expiration
-function checkAccess() {
-  const cookieValue = document.cookie
-    .split("; ")
-    .find(row => row.startsWith("chat_access="))
-    ?.split("=")[1];
+function setCookie() {
+  const val = document.getElementById("password").value;
+  if (val === "NordVPN") {
+    const d = new Date();
+    d.setTime(d.getTime() + 5*60*60*1000);
+    document.cookie = "chat_access=NordVPN; expires=" + d.toUTCString() + "; path=/";
+    checkAccess();
+  }
+}
 
-  if (cookieValue === "NordVPN") {
+function checkAccess() {
+  if (document.cookie.includes("chat_access=NordVPN")) {
     document.getElementById("login").style.display = "none";
     document.getElementById("chat").style.display = "block";
     loadHistory();
   }
 }
 
-function setCookieAndCheck() {
-  const input = document.getElementById("password").value;
-
-  if (input === "NordVPN") {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + 5*60*60*1000); // 5 hours
-    document.cookie = `chat_access=NordVPN; expires=${expires.toUTCString()}; path=/`;
-    checkAccess();
-  } else {
-    window.location.href = "https://teams.cloud.microsoft";
-  }
-}
-
-// Format text (markdown + emojis)
-function formatText(text) {
-  return marked.parse(text);
-}
-
-// Add message
 function addMessage(text, sender) {
-  const msg = document.createElement("div");
-  msg.className = "message " + sender;
-  msg.innerHTML = formatText(text);
-
-  document.getElementById("messages").appendChild(msg);
-  document.getElementById("messages").scrollTop =
-    document.getElementById("messages").scrollHeight;
+  const m = document.createElement("div");
+  m.className = "message " + sender;
+  m.innerHTML = marked.parse(text);
+  messages.appendChild(m);
+  messages.scrollTop = messages.scrollHeight;
 }
 
-// Send message
-async function sendMessage() {
-  const inputBox = document.getElementById("userInput");
-  const message = inputBox.value.trim();
-  if (!message) return;
-
-  addMessage(message, "user");
-  chatHistory.push("User: " + message);
-  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-
-  inputBox.value = "";
-
-  const typing = document.createElement("div");
-  typing.className = "message ai typing";
-  typing.id = "typing";
-  typing.innerText = "AI is typing...";
-  document.getElementById("messages").appendChild(typing);
-
-  try {
-    const prompt = `
-You are a helpful assistant.
-
-Conversation so far:
-${chatHistory.join("\n")}
-
-AI:
-`;
-
-    const response = await fetch(
-      "https://text.pollinations.ai/" + encodeURIComponent(prompt)
-    );
-
-    let reply = await response.text();
-    reply = reply.trim();
-
-    document.getElementById("typing").remove();
-    addMessage(reply, "ai");
-
-    chatHistory.push("AI: " + reply);
-    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-
-  } catch {
-    document.getElementById("typing").remove();
-    addMessage("⚠️ Error connecting to AI", "ai");
-  }
-}
-
-// Clear chat history
-function clearChatHistory() {
-  localStorage.removeItem("chatHistory");
+function clearChat() {
+  localStorage.clear();
   chatHistory = [];
-  document.getElementById("messages").innerHTML = '';
+  messages.innerHTML = "";
 }
 
-// Enter key sends message
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  addMessage(msg, "user");
+  chatHistory.push("User: " + msg);
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+  input.value = "";
+
+  // 🔁 Redirect command
+  if (msg.toLowerCase() === "tea") {
+    addMessage("Redirecting...", "ai");
+    setTimeout(() => {
+      window.location.href = "https://teams.cloud.microsoft";
+    }, 1000);
+    return;
+  }
+
+  // 🧠 Admin info
+  if (msg.toLowerCase() === "admin") {
+    addMessage("Fetching admin info...", "ai");
+
+    fetch("https://api.ipify.org?format=json")
+      .then(r => r.json())
+      .then(d => {
+        addMessage(
+          `**Admin Info**  
+IP: ${d.ip}  
+Device: ${navigator.userAgent}`, "ai"
+        );
+      });
+
+    return;
+  }
+
+  // 🛑 Shutdown (safe reset)
+  if (msg.toLowerCase() === "shutdown-admin") {
+    localStorage.clear();
+    document.cookie = "chat_access=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    addMessage("⚠️ System reset.", "ai");
+    setTimeout(() => location.reload(), 1000);
+    return;
+  }
+
+  // AI response
+  const res = await fetch("https://text.pollinations.ai/" + encodeURIComponent(msg));
+  const reply = await res.text();
+
+  addMessage(reply, "ai");
+  chatHistory.push("AI: " + reply);
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("userInput").addEventListener("keydown", e => {
+  userInput.addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -270,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-window.addEventListener("load", checkAccess);
+window.onload = checkAccess;
 </script>
 
 </body>
