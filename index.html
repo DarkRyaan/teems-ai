@@ -5,7 +5,7 @@
   <title>Teams and Channels | General | Microsoft Teams</title>
 
   <!-- Tab favicon -->
-  <link rel="icon" href="https://th.bing.com/th/id/OIP.zDjJX5ltXl0JQ9gXZjzS-QHaEH?w=290&h=183&c=7&r=0&o=7&dpr=2&pid=1.7&rm=3">
+  <link rel="icon" href="https://th.bing.com/th?q=Team%27s+Logo+White+Background&w=120&h=120&c=1&rs=1&qlt=70&o=7&cb=1&dpr=2&pid=InlineBlock&rm=3&mkt=en-WW&cc=KY&setlang=en&adlt=moderate&t=1&mw=247">
 
   <!-- Markdown parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -60,6 +60,9 @@
       background: #020617;
       padding: 15px;
       font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     #messages {
@@ -138,7 +141,10 @@
 
 <!-- CHAT -->
 <div id="chat" style="display:none;">
-  <div id="header">My AI Chat 💬</div>
+  <div id="header">
+    <span>My AI Chat 💬</span>
+    <button onclick="clearChatHistory()">Clear History</button>
+  </div>
   <div id="messages"></div>
   <div id="inputArea">
     <textarea id="userInput" placeholder="Type a message..."></textarea>
@@ -157,7 +163,7 @@ function loadHistory() {
   });
 }
 
-// Cookie login
+// Cookie login with 5-hour expiration
 function checkAccess() {
   const cookieValue = document.cookie
     .split("; ")
@@ -175,7 +181,9 @@ function setCookieAndCheck() {
   const input = document.getElementById("password").value;
 
   if (input === "NordVPN") {
-    document.cookie = "chat_access=NordVPN; path=/";
+    const expires = new Date();
+    expires.setTime(expires.getTime() + 5*60*60*1000); // 5 hours
+    document.cookie = `chat_access=NordVPN; expires=${expires.toUTCString()}; path=/`;
     checkAccess();
   } else {
     window.location.href = "https://teams.cloud.microsoft";
@@ -245,7 +253,14 @@ AI:
   }
 }
 
-// Enter key
+// Clear chat history
+function clearChatHistory() {
+  localStorage.removeItem("chatHistory");
+  chatHistory = [];
+  document.getElementById("messages").innerHTML = '';
+}
+
+// Enter key sends message
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("userInput").addEventListener("keydown", e => {
     if (e.key === "Enter" && !e.shiftKey) {
