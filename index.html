@@ -122,10 +122,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
 /* LOGIN */
 async function login() {
-  const pass = passwordInput.value;
+  const pass = document.getElementById("password").value;
+
+  if (!pass) {
+    alert("Enter password");
+    return;
+  }
 
   try {
-    const res = await fetch(API + "login", {
+    const res = await fetch(API + "/login", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ password: pass })
@@ -139,7 +144,8 @@ async function login() {
     } else {
       alert("Wrong password");
     }
-  } catch {
+
+  } catch (e) {
     alert("Server error");
   }
 }
