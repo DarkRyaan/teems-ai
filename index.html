@@ -92,6 +92,15 @@ textarea {
   resize: none;
   height: 40px;
 }
+
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -108,17 +117,14 @@ textarea {
 <div id="chat" style="display:none;">
   <div id="header">
     <span>AI Chat 💬</span>
-    <div>
-      <button onclick="openAdmin()">Admin</button>
-      <button onclick="clearLocal()">Clear</button>
-    </div>
+    <button onclick="clearLocal()">Clear</button>
   </div>
 
   <div id="messages"></div>
 
   <div id="inputArea">
     <textarea id="userInput" placeholder="Type here"></textarea>
-    <button onclick="sendMessage()">OK</button>
+    <button onclick="sendMessage()">Send</button>
   </div>
 </div>
 
@@ -159,11 +165,6 @@ function checkAccess() {
   }
 }
 
-/* ---------------- ADMIN ---------------- */
-function openAdmin() {
-  window.open("admin.html", "_blank");
-}
-
 /* ---------------- CLEAR ---------------- */
 function clearLocal() {
   document.getElementById("messages").innerHTML = "";
@@ -185,7 +186,7 @@ function addMessage(type, text) {
   }
 }
 
-/* ---------------- SEND MESSAGE ---------------- */
+/* ---------------- SEND ---------------- */
 async function sendMessage() {
   const input = document.getElementById("userInput");
   const text = input.value.trim();
@@ -223,15 +224,37 @@ async function sendMessage() {
   }
 }
 
-/* ---------------- ENTER KEY SUPPORT ---------------- */
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("userInput").addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-});
+/* ---------------- SITE ADMIN POPUP ---------------- */
+function showAnnouncement(text) {
+  const popup = document.createElement("div");
+
+  popup.innerHTML = `
+    <div style="
+      position:fixed;
+      top:20px;
+      left:50%;
+      transform:translateX(-50%);
+      background:#0b1220;
+      color:white;
+      padding:18px 26px;
+      border-radius:14px;
+      border:2px solid #22c55e;
+      font-size:16px;
+      z-index:9999;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      text-align:center;
+      min-width:260px;
+    ">
+      <div style="font-weight:bold; font-size:18px; margin-bottom:6px;">
+        SITE ADMIN
+      </div>
+      <div>${text}</div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 5000);
+}
 
 /* ---------------- LIVE SYNC ---------------- */
 async function checkStatus() {
@@ -243,18 +266,15 @@ async function checkStatus() {
       lastClearCheck = data.lastCleared;
       clearLocal();
       addMessage("ai", "⚠️ Chat cleared by admin");
-
-      // 🔥 FORCE REFRESH ON CLEAR (NEW FEATURE YOU WANTED STYLE)
-      location.reload();
     }
 
     if (data.broadcast && data.broadcast !== lastBroadcast) {
       lastBroadcast = data.broadcast;
-      addMessage("ai", "📢 " + data.broadcast);
+      showAnnouncement(data.broadcast);
     }
 
     if (sessionVersion && data.sessionVersion !== sessionVersion) {
-      alert("Logged out by admin");
+      alert("Password changed — reloading");
       location.reload();
     }
 
