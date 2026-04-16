@@ -21,7 +21,6 @@ body {
 #login {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   justify-content: center;
   align-items: center;
   height: 100vh;
@@ -34,16 +33,12 @@ body {
   display: flex;
   flex-direction: column;
   background: #1e293b;
-  overflow: hidden;
 }
 
 /* HEADER */
 #header {
   background: #020617;
   padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 /* MESSAGES */
@@ -61,24 +56,15 @@ body {
   padding: 10px;
   border-radius: 12px;
   max-width: 75%;
-  word-wrap: break-word;
 }
 
-.user {
-  background: #3b82f6;
-  align-self: flex-end;
-}
-
-.ai {
-  background: #334155;
-  align-self: flex-start;
-}
+.user { background: #3b82f6; align-self: flex-end; }
+.ai { background: #334155; align-self: flex-start; }
 
 /* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
-  gap: 5px;
 }
 
 textarea {
@@ -86,8 +72,6 @@ textarea {
   padding: 10px;
   border-radius: 8px;
   border: none;
-  resize: none;
-  height: 40px;
 }
 
 button {
@@ -96,24 +80,11 @@ button {
   border-radius: 8px;
   background: #22c55e;
   color: white;
-  cursor: pointer;
 }
 
-/* LOGIN ANIMATION */
-#login, #chat {
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-.hidden {
-  opacity: 0;
-  transform: translateY(10px);
-  pointer-events: none;
-}
-
-.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* ANIMATION */
+.hidden { opacity: 0; transform: translateY(10px); }
+.show { opacity: 1; transform: translateY(0); transition: .3s; }
 </style>
 </head>
 
@@ -123,16 +94,12 @@ button {
 <div id="login">
   <h2>Enter Access</h2>
   <input type="password" id="password">
-  <button onclick="setCookie()">Enter</button>
+  <button onclick="login()">Enter</button>
 </div>
 
 <!-- CHAT -->
-<div id="chat" class="hidden">
-  <div id="header">
-    <span>AI Chat 💬</span>
-    <button onclick="clearLocal()">Clear</button>
-  </div>
-
+<div id="chat" class="hidden" style="display:none;">
+  <div id="header">AI Chat 💬</div>
   <div id="messages"></div>
 
   <div id="inputArea">
@@ -144,19 +111,17 @@ button {
 <script>
 const API = "https://backend.ryaana059.workers.dev/";
 
-/* ---------------- STATE (FIXED PERSISTENCE) ---------------- */
-let lastClearCheck = localStorage.getItem("lastClear") || 0;
+/* ---------------- STATE (REFRESH SAFE FIX) ---------------- */
+let lastClear = localStorage.getItem("lastClear") || 0;
 let lastBroadcastId = localStorage.getItem("lastBroadcastId") || null;
 let sessionVersion = 0;
 
 /* ---------------- LOGIN ---------------- */
-async function setCookie() {
-  const val = document.getElementById("password").value;
-
+async function login() {
   const res = await fetch(API + "login", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ password: val })
+    body: JSON.stringify({ password: password.value })
   });
 
   const data = await res.json();
@@ -164,73 +129,36 @@ async function setCookie() {
   if (data.success) {
     sessionVersion = data.sessionVersion;
     document.cookie = "chat_access=1";
-    checkAccess();
-  } else {
-    alert("Wrong password");
-  }
-}
 
-/* ---------------- ACCESS + ANIMATION ---------------- */
-function checkAccess() {
-  if (document.cookie.includes("chat_access=1")) {
-
-    const login = document.getElementById("login");
+    document.getElementById("login").style.display = "none";
     const chat = document.getElementById("chat");
+    chat.style.display = "flex";
 
-    login.classList.add("hidden");
-
-    setTimeout(() => {
-      login.style.display = "none";
-      chat.style.display = "flex";
-
-      requestAnimationFrame(() => {
-        chat.classList.remove("hidden");
-        chat.classList.add("show");
-      });
-
-    }, 350);
+    requestAnimationFrame(() => {
+      chat.classList.remove("hidden");
+      chat.classList.add("show");
+    });
   }
 }
 
-/* ---------------- CLEAR ---------------- */
-function clearLocal() {
-  document.getElementById("messages").innerHTML = "";
-}
-
-/* ---------------- MESSAGE ---------------- */
-function addMessage(type, text) {
-  const div = document.createElement("div");
-  div.className = "message " + type;
-  div.innerText = text;
-
-  const box = document.getElementById("messages");
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-
-  if (box.children.length > 60) {
-    box.removeChild(box.firstChild);
-  }
-}
-
-/* ---------------- SEND ---------------- */
+/* ---------------- SEND MESSAGE ---------------- */
 async function sendMessage() {
-  const input = document.getElementById("userInput");
-  const text = input.value.trim();
+  const text = userInput.value.trim();
   if (!text) return;
 
-  input.value = "";
+  userInput.value = "";
 
-  addMessage("user", text);
+  add("user", text);
 
   const typing = document.createElement("div");
   typing.className = "message ai";
   typing.innerText = "AI is typing...";
-  document.getElementById("messages").appendChild(typing);
+  messages.appendChild(typing);
 
   try {
     const res = await fetch(API, {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
         messages: [{ role: "user", content: text }]
       })
@@ -239,48 +167,25 @@ async function sendMessage() {
     const data = await res.json();
     typing.remove();
 
-    const reply =
-      data?.choices?.[0]?.message?.content || "No response";
-
-    addMessage("ai", reply);
+    add("ai", data?.choices?.[0]?.message?.content || "No response");
 
   } catch {
     typing.remove();
-    addMessage("ai", "⚠️ Error");
+    add("ai", "⚠️ Error");
   }
 }
 
-/* ---------------- ANNOUNCEMENTS (FIXED) ---------------- */
-function showAnnouncement(text) {
-  const popup = document.createElement("div");
+/* ---------------- ADD MESSAGE ---------------- */
+function add(type, text) {
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.innerText = text;
 
-  popup.innerHTML = `
-    <div style="
-      position:fixed;
-      top:20px;
-      left:50%;
-      transform:translateX(-50%);
-      background:#0b1220;
-      color:white;
-      padding:18px 26px;
-      border-radius:14px;
-      border:2px solid #22c55e;
-      z-index:9999;
-      box-shadow:0 10px 30px rgba(0,0,0,0.6);
-      text-align:center;
-    ">
-      <div style="font-weight:bold; font-size:18px; margin-bottom:6px;">
-        SITE ADMIN
-      </div>
-      <div>${text}</div>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 5000);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
 }
 
-/* ---------------- SYNC ---------------- */
+/* ---------------- STATUS SYNC (FIXED REFRESH BUG) ---------------- */
 async function checkStatus() {
   try {
     const res = await fetch(API + "status");
@@ -288,22 +193,24 @@ async function checkStatus() {
 
     if (!data) return;
 
-    /* CLEAR SYNC */
-    if (data.lastCleared && data.lastCleared !== lastClearCheck) {
-      lastClearCheck = data.lastCleared;
-      localStorage.setItem("lastClear", lastClearCheck);
-      clearLocal();
-      addMessage("ai", "⚠️ Chat cleared by admin");
+    /* CLEAR FIX */
+    if (data.lastCleared && data.lastCleared !== lastClear) {
+      lastClear = data.lastCleared;
+      localStorage.setItem("lastClear", lastClear);
+
+      messages.innerHTML = "";
+      add("ai", "⚠️ Chat cleared by admin");
     }
 
-    /* BROADCAST SYNC (FIXED NO REPLAY BUG) */
+    /* BROADCAST FIX (NO REPLAY ON REFRESH) */
     if (data.broadcast?.id && data.broadcast.id !== lastBroadcastId) {
       lastBroadcastId = data.broadcast.id;
       localStorage.setItem("lastBroadcastId", lastBroadcastId);
-      showAnnouncement(data.broadcast.text);
+
+      alert("SITE ADMIN: " + data.broadcast.text);
     }
 
-    /* PASSWORD CHANGE KILL SWITCH */
+    /* SESSION KILL SWITCH */
     if (sessionVersion && data.sessionVersion !== sessionVersion) {
       alert("Password changed — reloading");
       location.reload();
@@ -313,13 +220,16 @@ async function checkStatus() {
 }
 
 setInterval(checkStatus, 3000);
-window.onload = checkAccess;
+window.onload = () => {
+  if (document.cookie.includes("chat_access=1")) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+  }
+};
 
 /* ---------------- ENTER TO SEND ---------------- */
 document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById("userInput");
-
-  input.addEventListener("keydown", (e) => {
+  userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
