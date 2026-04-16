@@ -1,33 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin</title>
+<title>Admin Panel</title>
 
 <style>
 body {
   margin:0;
   font-family:Arial;
-  background:#0f172a;
+  background: linear-gradient(135deg,#0f172a,#020617);
   color:white;
+  height:100vh;
   display:flex;
   justify-content:center;
   align-items:center;
-  height:100vh;
 }
 
+/* PANEL */
 .panel {
-  width:400px;
-  background:#1e293b;
+  width:420px;
+  background:#111827;
   padding:20px;
-  border-radius:12px;
+  border-radius:16px;
+  box-shadow:0 20px 50px rgba(0,0,0,0.6);
 }
 
+/* INPUTS */
 input,textarea,button {
   width:100%;
-  margin:5px 0;
   padding:10px;
+  margin:6px 0;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
+}
+
+/* BUTTON */
+button {
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+}
+
+/* DANGER */
+.danger { background:#ef4444; }
+
+/* LOGS */
+.logs {
+  background:#0b1220;
+  padding:10px;
+  border-radius:10px;
+  max-height:200px;
+  overflow-y:auto;
+  font-size:12px;
 }
 </style>
 </head>
@@ -36,28 +59,31 @@ input,textarea,button {
 
 <div class="panel">
 
-<div id="login">
-  <input id="pass" type="password">
+<!-- LOGIN -->
+<div id="loginBox">
+  <h2>Admin Login</h2>
+  <input id="pass" type="password" placeholder="Password">
   <button onclick="login()">Login</button>
 </div>
 
+<!-- DASH -->
 <div id="dash" style="display:none;">
+  <h2>Control Panel</h2>
 
-<textarea id="msg" placeholder="Announcement"></textarea>
-<button onclick="broadcast()">Broadcast</button>
+  <textarea id="msg" placeholder="Announcement"></textarea>
+  <button onclick="broadcast()">📢 Broadcast</button>
 
-<button onclick="clearChat()">Clear Chat</button>
+  <button class="danger" onclick="clearChat()">🧹 Clear Chat</button>
 
-<input id="newpass" placeholder="User Password">
-<button onclick="setPass()">Set User Pass</button>
+  <input id="newpass" placeholder="User Password">
+  <button onclick="setPass()">Change User Password</button>
 
-<input id="newadmin" placeholder="Admin Password">
-<button onclick="setAdmin()">Set Admin Pass</button>
+  <input id="newadmin" placeholder="Admin Password">
+  <button onclick="setAdmin()">Change Admin Password</button>
 
-<h3>Logs</h3>
-<button onclick="loadLogs()">Load Logs</button>
-<div id="logs"></div>
-
+  <h3>Logs</h3>
+  <button onclick="loadLogs()">Refresh Logs</button>
+  <div class="logs" id="logs"></div>
 </div>
 
 </div>
@@ -67,19 +93,18 @@ const API = "https://backend.ryaana059.workers.dev/";
 
 /* LOGIN */
 async function login(){
-  const pass = document.getElementById("pass").value;
-
   const res = await fetch(API+"adminLogin",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:pass})
+    body:JSON.stringify({password:pass.value})
   });
 
   const data = await res.json();
 
   if(data.success){
-    document.getElementById("login").style.display="none";
-    document.getElementById("dash").style.display="block";
+    loginBox.style.display="none";
+    dash.style.display="block";
+    loadLogs();
   } else {
     alert("Wrong password");
   }
@@ -87,12 +112,10 @@ async function login(){
 
 /* BROADCAST */
 async function broadcast(){
-  const msg = document.getElementById("msg").value;
-
   await fetch(API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"broadcast",text:msg})
+    body:JSON.stringify({type:"broadcast",text:msg.value})
   });
 }
 
@@ -105,36 +128,34 @@ async function clearChat(){
   });
 }
 
-/* USER PASSWORD */
+/* USER PASS */
 async function setPass(){
-  const newpass = document.getElementById("newpass").value;
-
   await fetch(API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"setPassword",password:newpass})
+    body:JSON.stringify({type:"setPassword",password:newpass.value})
   });
 }
 
-/* ADMIN PASSWORD */
+/* ADMIN PASS */
 async function setAdmin(){
-  const newadmin = document.getElementById("newadmin").value;
-
   await fetch(API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"setAdminPassword",password:newadmin})
+    body:JSON.stringify({type:"setAdminPassword",password:newadmin.value})
   });
 }
 
-/* LOGS */
+/* LOGS (FIXED) */
 async function loadLogs(){
   const res = await fetch(API+"logs");
   const data = await res.json();
 
-  document.getElementById("logs").innerHTML =
-    data.logs.map(l =>
-      `[${new Date(l.time).toLocaleTimeString()}] ${l.role}: ${l.content}`
-    ).join("<br>");
+  logs.innerHTML = data.logs.map(l =>
+    `<div>[${new Date(l.time).toLocaleTimeString()}] ${l.role}: ${l.content}</div>`
+  ).join("");
 }
 </script>
+
+</body>
+</html>
