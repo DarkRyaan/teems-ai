@@ -92,15 +92,6 @@ textarea {
   resize: none;
   height: 40px;
 }
-
-button {
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: #22c55e;
-  color: white;
-  cursor: pointer;
-}
 </style>
 </head>
 
@@ -126,8 +117,8 @@ button {
   <div id="messages"></div>
 
   <div id="inputArea">
-    <textarea id="userInput"></textarea>
-    <button onclick="sendMessage()">Send</button>
+    <textarea id="userInput" placeholder="Type here"></textarea>
+    <button onclick="sendMessage()">OK</button>
   </div>
 </div>
 
@@ -139,28 +130,24 @@ let lastClearCheck = 0;
 let lastBroadcast = "";
 let sessionVersion = 0;
 
-/* ---------------- LOGIN (FIXED) ---------------- */
+/* ---------------- LOGIN ---------------- */
 async function setCookie() {
   const val = document.getElementById("password").value;
 
-  try {
-    const res = await fetch(API + "login", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ password: val })
-    });
+  const res = await fetch(API + "login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ password: val })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (data.success) {
-      sessionVersion = data.sessionVersion;
-      document.cookie = "chat_access=1";
-      checkAccess();
-    } else {
-      alert("Wrong password");
-    }
-  } catch {
-    alert("Login error");
+  if (data.success) {
+    sessionVersion = data.sessionVersion;
+    document.cookie = "chat_access=1";
+    checkAccess();
+  } else {
+    alert("Wrong password");
   }
 }
 
@@ -198,7 +185,7 @@ function addMessage(type, text) {
   }
 }
 
-/* ---------------- CHAT ---------------- */
+/* ---------------- SEND MESSAGE ---------------- */
 async function sendMessage() {
   const input = document.getElementById("userInput");
   const text = input.value.trim();
@@ -236,26 +223,36 @@ async function sendMessage() {
   }
 }
 
+/* ---------------- ENTER KEY SUPPORT ---------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("userInput").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+});
+
 /* ---------------- LIVE SYNC ---------------- */
 async function checkStatus() {
   try {
     const res = await fetch(API + "status");
     const data = await res.json();
 
-    // 🧹 CLEAR SYNC
     if (data.lastCleared && data.lastCleared !== lastClearCheck) {
       lastClearCheck = data.lastCleared;
       clearLocal();
       addMessage("ai", "⚠️ Chat cleared by admin");
+
+      // 🔥 FORCE REFRESH ON CLEAR (NEW FEATURE YOU WANTED STYLE)
+      location.reload();
     }
 
-    // 📢 BROADCAST
     if (data.broadcast && data.broadcast !== lastBroadcast) {
       lastBroadcast = data.broadcast;
       addMessage("ai", "📢 " + data.broadcast);
     }
 
-    // 🔒 FORCE LOGOUT
     if (sessionVersion && data.sessionVersion !== sessionVersion) {
       alert("Logged out by admin");
       location.reload();
