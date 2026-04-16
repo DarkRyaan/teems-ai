@@ -275,7 +275,6 @@ async function checkStatus() {
     if (data.lastCleared && data.lastCleared !== lastClearCheck) {
       lastClearCheck = data.lastCleared;
       clearLocal();
-      addMessage("ai", "⚠️ Chat cleared by admin");
     }
 
     if (data.broadcast && data.broadcast !== lastBroadcast) {
