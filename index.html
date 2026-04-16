@@ -17,7 +17,6 @@ body {
   height: 100vh;
 }
 
-/* LOGIN */
 #login {
   display: flex;
   flex-direction: column;
@@ -26,7 +25,6 @@ body {
   height: 100vh;
 }
 
-/* CHAT */
 #chat {
   width: 100vw;
   height: 100vh;
@@ -35,13 +33,11 @@ body {
   background: #1e293b;
 }
 
-/* HEADER */
 #header {
   background: #020617;
   padding: 10px;
 }
 
-/* MESSAGES */
 #messages {
   flex: 1;
   overflow-y: auto;
@@ -61,7 +57,6 @@ body {
 .user { background: #3b82f6; align-self: flex-end; }
 .ai { background: #334155; align-self: flex-start; }
 
-/* INPUT */
 #inputArea {
   display: flex;
   padding: 10px;
@@ -86,14 +81,12 @@ button {
 
 <body>
 
-<!-- LOGIN -->
 <div id="login">
   <h2>Enter Access</h2>
   <input type="password" id="password">
   <button onclick="login()">Enter</button>
 </div>
 
-<!-- CHAT -->
 <div id="chat">
   <div id="header">AI Chat 💬</div>
   <div id="messages"></div>
@@ -107,15 +100,14 @@ button {
 <script>
 const API = "https://backend.ryaana059.workers.dev/";
 
-let messages, userInput, passwordInput;
+let messages, userInput;
 let lastClear = localStorage.getItem("lastClear") || 0;
 let lastBroadcastId = localStorage.getItem("lastBroadcastId") || null;
 
-/* SAFE INIT (IMPORTANT) */
+/* INIT */
 window.addEventListener("DOMContentLoaded", () => {
   messages = document.getElementById("messages");
   userInput = document.getElementById("userInput");
-  passwordInput = document.getElementById("password");
 
   setupEnterKey();
 });
@@ -139,24 +131,32 @@ async function login() {
     const data = await res.json();
 
     if (data.success) {
+      document.cookie = "chat_access=1"; // ✅ FIX
       document.getElementById("login").style.display = "none";
       document.getElementById("chat").style.display = "flex";
     } else {
       alert("Wrong password");
     }
 
-  } catch (e) {
+  } catch {
     alert("Server error");
   }
 }
 
-/* SEND MESSAGE */
+/* AUTO LOGIN AFTER REFRESH */
+window.onload = () => {
+  if (document.cookie.includes("chat_access=1")) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+  }
+};
+
+/* SEND */
 async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
 
   userInput.value = "";
-
   add("user", text);
 
   const typing = document.createElement("div");
@@ -184,7 +184,7 @@ async function sendMessage() {
   }
 }
 
-/* ADD MESSAGE */
+/* ADD */
 function add(type, text) {
   const div = document.createElement("div");
   div.className = "message " + type;
@@ -207,7 +207,7 @@ function setupEnterKey() {
 /* STATUS SYNC */
 async function checkStatus() {
   try {
-    const res = await fetch(API + "status");
+    const res = await fetch(API + "/status"); // ✅ FIX
     const data = await res.json();
 
     if (!data) return;
@@ -228,7 +228,6 @@ async function checkStatus() {
 }
 
 setInterval(checkStatus, 3000);
-
 </script>
 
 </body>
