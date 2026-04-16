@@ -82,9 +82,17 @@ button {
   color: white;
 }
 
-/* ANIMATION */
-.hidden { opacity: 0; transform: translateY(10px); }
-.show { opacity: 1; transform: translateY(0); transition: .3s; }
+/* ANIMATION FIXED */
+.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: 0.3s;
+}
+
+.show {
+  opacity: 1;
+  transform: translateY(0);
+}
 </style>
 </head>
 
@@ -111,17 +119,24 @@ button {
 <script>
 const API = "https://backend.ryaana059.workers.dev/";
 
-/* ---------------- STATE (REFRESH SAFE FIX) ---------------- */
+/* FIXED DOM REFERENCES */
+const messages = document.getElementById("messages");
+const userInput = document.getElementById("userInput");
+const passwordInput = document.getElementById("password");
+
+/* STATE */
 let lastClear = localStorage.getItem("lastClear") || 0;
 let lastBroadcastId = localStorage.getItem("lastBroadcastId") || null;
 let sessionVersion = 0;
 
-/* ---------------- LOGIN ---------------- */
+/* LOGIN */
 async function login() {
+  const pass = passwordInput.value;
+
   const res = await fetch(API + "login", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ password: password.value })
+    body: JSON.stringify({ password: pass })
   });
 
   const data = await res.json();
@@ -138,10 +153,12 @@ async function login() {
       chat.classList.remove("hidden");
       chat.classList.add("show");
     });
+  } else {
+    alert("Wrong password");
   }
 }
 
-/* ---------------- SEND MESSAGE ---------------- */
+/* SEND MESSAGE */
 async function sendMessage() {
   const text = userInput.value.trim();
   if (!text) return;
@@ -175,7 +192,7 @@ async function sendMessage() {
   }
 }
 
-/* ---------------- ADD MESSAGE ---------------- */
+/* ADD MESSAGE */
 function add(type, text) {
   const div = document.createElement("div");
   div.className = "message " + type;
@@ -185,7 +202,7 @@ function add(type, text) {
   messages.scrollTop = messages.scrollHeight;
 }
 
-/* ---------------- STATUS SYNC (FIXED REFRESH BUG) ---------------- */
+/* STATUS SYNC (REFRESH SAFE) */
 async function checkStatus() {
   try {
     const res = await fetch(API + "status");
@@ -193,16 +210,16 @@ async function checkStatus() {
 
     if (!data) return;
 
-    /* CLEAR FIX */
+    /* CLEAR */
     if (data.lastCleared && data.lastCleared !== lastClear) {
       lastClear = data.lastCleared;
       localStorage.setItem("lastClear", lastClear);
 
       messages.innerHTML = "";
-      add("ai", "⚠️ Chat cleared by admin");
+      
     }
 
-    /* BROADCAST FIX (NO REPLAY ON REFRESH) */
+    /* BROADCAST */
     if (data.broadcast?.id && data.broadcast.id !== lastBroadcastId) {
       lastBroadcastId = data.broadcast.id;
       localStorage.setItem("lastBroadcastId", lastBroadcastId);
@@ -210,16 +227,12 @@ async function checkStatus() {
       alert("SITE ADMIN: " + data.broadcast.text);
     }
 
-    /* SESSION KILL SWITCH */
-    if (sessionVersion && data.sessionVersion !== sessionVersion) {
-      alert("Password changed — reloading");
-      location.reload();
-    }
-
   } catch {}
 }
 
 setInterval(checkStatus, 3000);
+
+/* AUTO LOGIN CHECK */
 window.onload = () => {
   if (document.cookie.includes("chat_access=1")) {
     document.getElementById("login").style.display = "none";
@@ -227,7 +240,7 @@ window.onload = () => {
   }
 };
 
-/* ---------------- ENTER TO SEND ---------------- */
+/* ENTER TO SEND */
 document.addEventListener("DOMContentLoaded", () => {
   userInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
