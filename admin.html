@@ -67,26 +67,32 @@ const API = "https://backend.ryaana059.workers.dev/";
 
 /* LOGIN */
 async function login(){
+  const pass = document.getElementById("pass").value;
+
   const res = await fetch(API+"adminLogin",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:pass.value})
+    body:JSON.stringify({password:pass})
   });
 
   const data = await res.json();
 
   if(data.success){
-    login.style.display="none";
-    dash.style.display="block";
+    document.getElementById("login").style.display="none";
+    document.getElementById("dash").style.display="block";
+  } else {
+    alert("Wrong password");
   }
 }
 
 /* BROADCAST */
 async function broadcast(){
+  const msg = document.getElementById("msg").value;
+
   await fetch(API,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"broadcast",text:msg.value})
+    body:JSON.stringify({type:"broadcast",text:msg})
   });
 }
 
@@ -94,22 +100,30 @@ async function broadcast(){
 async function clearChat(){
   await fetch(API,{
     method:"POST",
+    headers:{"Content-Type":"application/json"},
     body:JSON.stringify({type:"clear"})
   });
 }
 
-/* PASSWORDS */
+/* USER PASSWORD */
 async function setPass(){
+  const newpass = document.getElementById("newpass").value;
+
   await fetch(API,{
     method:"POST",
-    body:JSON.stringify({type:"setPassword",password:newpass.value})
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({type:"setPassword",password:newpass})
   });
 }
 
+/* ADMIN PASSWORD */
 async function setAdmin(){
+  const newadmin = document.getElementById("newadmin").value;
+
   await fetch(API,{
     method:"POST",
-    body:JSON.stringify({type:"setAdminPassword",password:newadmin.value})
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({type:"setAdminPassword",password:newadmin})
   });
 }
 
@@ -118,11 +132,9 @@ async function loadLogs(){
   const res = await fetch(API+"logs");
   const data = await res.json();
 
-  logs.innerHTML = data.logs.map(l =>
-    `[${new Date(l.time).toLocaleTimeString()}] ${l.role}: ${l.content}`
-  ).join("<br>");
+  document.getElementById("logs").innerHTML =
+    data.logs.map(l =>
+      `[${new Date(l.time).toLocaleTimeString()}] ${l.role}: ${l.content}`
+    ).join("<br>");
 }
 </script>
-
-</body>
-</html>
