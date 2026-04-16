@@ -133,6 +133,306 @@ const API = "https://backend.ryaana059.workers.dev/";
 
 let chatHistory = [];
 let lastClearCheck = 0;
+let lastBroadcastId = null;
+let sessionVersion = 0;
+
+/* ---------------- LOGIN ---------------- */
+async function setCookie() {
+  const val = document.getElementById("password").value;
+
+  const res = await fetch(API + "login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ password: val })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    sessionVersion = data.sessionVersion;
+    document.cookie = "chat_access=1";
+    checkAccess();
+  } else {
+    alert("Wrong password");
+  }
+}
+
+/* ---------------- ACCESS ---------------- */
+function checkAccess() {
+  if (document.cookie.includes("chat_access=1")) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+  }
+}
+
+/* ---------------- CLEAR ---------------- */
+function clearLocal() {
+  document.getElementById("messages").innerHTML = "";
+  chatHistory = [];
+}
+
+/* ---------------- ADD MESSAGE ---------------- */
+function addMessage(type, text) {
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.innerText = text;
+
+  const box = document.getElementById("messages");
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+
+  if (box.children.length > 60) {
+    box.removeChild(box.firstChild);
+  }
+}
+
+/* ---------------- SEND ---------------- */
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+
+  addMessage("user", text);
+
+  const typing = document.createElement("div");
+  typing.className = "message ai";
+  typing.innerText = "AI is typing...";
+  document.getElementById("messages").appendChild(typing);
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        messages: [{ role: "user", content: text }]
+      })
+    });
+
+    const data = await res.json();
+    typing.remove();
+
+    const reply =
+      data?.choices?.[0]?.message?.content || "No response";
+
+    addMessage("ai", reply);
+
+  } catch {
+    typing.remove();
+    addMessage("ai", "⚠️ Error");
+  }
+}
+
+/* ---------------- ANNOUNCEMENT POPUP ---------------- */
+function showAnnouncement(text) {
+  const popup = document.createElement("div");
+
+  popup.innerHTML = `
+    <div style="
+      position:fixed;
+      top:20px;
+      left:50%;
+      transform:translateX(-50%);
+      background:#0b1220;
+      color:white;
+      padding:18px 26px;
+      border-radius:14px;
+      border:2px solid #22c55e;
+      font-size:16px;
+      z-index:9999;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      text-align:center;
+      min-width:260px;
+    ">
+      <div style="font-weight:bold; font-size:18px; margin-bottom:6px;">
+        SITE ADMIN
+      </div>
+      <div>${text}</div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 5000);
+}
+
+/* ---------------- LIVE SYNC ---------------- */
+async function checkStatus() {
+  try {
+    const res = await fetch(API + "status");
+    const data = await res.json();
+
+    if (data.lastCleared && data.lastCleared !== lastClearCheck) {
+      lastClearCheck = data.lastCleared;
+      clearLocal();
+      addMessage("ai", "⚠️ Chat cleared by admin");
+    }
+
+    if (data.broadcast && data.broadcast.id !== lastBroadcastId) {
+      lastBroadcastId = data.broadcast.id;
+      showAnnouncement(data.broadcast.text);
+    }
+
+    if (sessionVersion && data.sessionVersion !== sessionVersion) {
+      alert("Password changed — reloading");
+      location.reload();
+    }
+
+  } catch {}
+}
+
+setInterval(checkStatus, 3000);
+window.onload = checkAccess;
+
+/* ---------------- ⌨️ ENTER TO SEND (YOUR FIX) ---------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("userInput");
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+});
+</script>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teams and Channels | General | Microsoft Teams</title>
+
+<link rel="icon" href="https://th.bing.com/th?q=Team%27s+Logo+White+Background&w=120&h=120&c=1&rs=1&qlt=70&o=7&dpr=2">
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+body {
+  background: #0f172a;
+  font-family: Arial;
+  color: white;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#login input {
+  padding: 12px;
+  width: 240px;
+  border-radius: 10px;
+  border: none;
+}
+
+#chat {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #1e293b;
+  overflow: hidden;
+}
+
+#header {
+  background: #020617;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #020617;
+}
+
+.message {
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 75%;
+}
+
+.user {
+  background: #3b82f6;
+  align-self: flex-end;
+}
+
+.ai {
+  background: #334155;
+  align-self: flex-start;
+}
+
+#inputArea {
+  display: flex;
+  padding: 10px;
+  gap: 5px;
+}
+
+textarea {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  resize: none;
+  height: 40px;
+}
+
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <h2>Enter Access</h2>
+  <input type="password" id="password">
+  <button onclick="setCookie()">Enter</button>
+</div>
+
+<!-- CHAT -->
+<div id="chat" style="display:none;">
+  <div id="header">
+    <span>AI Chat 💬</span>
+    <button onclick="clearLocal()">Clear</button>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="inputArea">
+    <textarea id="userInput" placeholder="Type here"></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+const API = "https://backend.ryaana059.workers.dev/";
+
+let chatHistory = [];
+let lastClearCheck = 0;
 let lastBroadcast = "";
 let sessionVersion = 0;
 
