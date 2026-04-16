@@ -1,80 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <title>Admin Panel</title>
+
 <style>
-body { background:#020617; color:white; font-family:Arial; padding:20px; }
-.msg { padding:8px; margin:5px; border-radius:8px; }
-.user { background:#3b82f6; }
-.ai { background:#334155; }
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.panel {
+  width: 360px;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button.danger {
+  background: #ef4444;
+}
+
+button.blue {
+  background: #3b82f6;
+}
+
+.status {
+  margin-top: 10px;
+  font-size: 13px;
+  text-align: center;
+  opacity: 0.8;
+}
 </style>
 </head>
 
 <body>
 
-<h1>🧠 Admin Panel</h1>
+<div class="panel">
+  <h2>🧠 SITE ADMIN PANEL</h2>
 
-<h3>📢 Broadcast</h3>
-<input id="broadcastMsg">
-<button onclick="sendBroadcast()">Send</button>
+  <textarea id="broadcast" placeholder="Send announcement..."></textarea>
+  <button class="blue" onclick="sendBroadcast()">📢 Send Announcement</button>
 
-<h3>🔒 Change Password</h3>
-<input id="newPass">
-<button onclick="changePassword()">Apply</button>
+  <button class="danger" onclick="clearChat()">🧹 Clear Chat</button>
 
-<h3>🧹 Logs</h3>
-<button onclick="loadLogs()">Reload</button>
-<button onclick="clearLogs()">Clear All</button>
+  <input id="newPassword" type="text" placeholder="New password">
+  <button onclick="changePassword()">🔐 Change Password</button>
 
-<div id="logs"></div>
+  <div class="status" id="status">Ready</div>
+</div>
 
 <script>
-const API = "https://backend.ryaana059.workers.dev";
+const API = "https://backend.ryaana059.workers.dev/";
 
-async function loadLogs() {
-  const res = await fetch(API + "/logs");
+/* ---------------- ANNOUNCEMENT ---------------- */
+async function sendBroadcast() {
+  const text = document.getElementById("broadcast").value.trim();
+  if (!text) return setStatus("Enter message");
+
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      type: "broadcast",
+      text
+    })
+  });
+
+  document.getElementById("broadcast").value = "";
+  setStatus("Announcement sent ✔");
+}
+
+/* ---------------- CLEAR CHAT ---------------- */
+async function clearChat() {
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      type: "clear"
+    })
+  });
+
+  setStatus("Chat cleared ✔");
+}
+
+/* ---------------- CHANGE PASSWORD ---------------- */
+async function changePassword() {
+  const pass = document.getElementById("newPassword").value.trim();
+  if (!pass) return setStatus("Enter password");
+
+  const res = await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      type: "setPassword",
+      password: pass
+    })
+  });
+
   const data = await res.json();
 
-  const box = document.getElementById("logs");
-  box.innerHTML = "";
-
-  data.forEach(m => {
-    const div = document.createElement("div");
-    div.className = "msg " + (m.role === "user" ? "user" : "ai");
-    div.innerText = m.role + ": " + m.content;
-    box.appendChild(div);
-  });
+  if (data.ok) {
+    setStatus("Password updated ✔ (users will be logged out)");
+  } else {
+    setStatus("Error changing password");
+  }
 }
 
-async function clearLogs() {
-  await fetch(API + "/clear");
-  loadLogs();
+/* ---------------- STATUS ---------------- */
+function setStatus(msg) {
+  document.getElementById("status").innerText = msg;
 }
-
-async function sendBroadcast() {
-  const msg = document.getElementById("broadcastMsg").value;
-
-  await fetch(API + "/broadcast", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ message: msg })
-  });
-}
-
-async function changePassword() {
-  const pass = document.getElementById("newPass").value;
-
-  await fetch(API + "/set-password", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ password: pass })
-  });
-
-  alert("Password changed + all users logged out");
-}
-
-setInterval(loadLogs, 3000);
-loadLogs();
 </script>
 
 </body>
