@@ -1,132 +1,292 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Admin Panel</title>
+<meta charset="UTF-8">
+<title>Teams and Channels</title>
 
 <style>
 body {
-  margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
+  margin: 0;
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#login {
   display:flex;
+  flex-direction:column;
   justify-content:center;
   align-items:center;
   height:100vh;
-}
-
-.panel {
-  width:500px;
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
-}
-
-input,textarea,button {
-  width:100%;
-  margin:5px 0;
-  padding:10px;
-  border:none;
-  border-radius:8px;
-}
-
-button { background:#22c55e; color:white; cursor:pointer; }
-
-#logs {
-  background:#020617;
-  padding:10px;
-  border-radius:12px;
-  height:250px;
-  overflow-y:auto;
-  display:flex;
-  flex-direction:column;
   gap:10px;
 }
 
-.log {
-  padding:10px;
-  border-radius:12px;
+#login input {
+  padding:12px;
+  width:240px;
+  border-radius:10px;
+  border:none;
 }
 
-.log.user { background:#3b82f6; }
-.log.admin { background:#22c55e; color:black; }
+#chat {
+  display:none;
+  flex-direction:column;
+  height:100vh;
+  width:100vw;
+  background:#1e293b;
+}
+
+#header {
+  background:#020617;
+  padding:10px;
+}
+
+#messages {
+  flex:1;
+  overflow-y:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:#020617;
+}
+
+.message {
+  padding:10px;
+  border-radius:12px;
+  max-width:75%;
+  word-wrap:break-word;
+}
+
+.user { background:#3b82f6; align-self:flex-end; }
+.ai { background:#334155; align-self:flex-start; }
+
+#inputArea {
+  display:flex;
+  padding:10px;
+  gap:5px;
+}
+
+textarea {
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  resize:none;
+  height:40px;
+}
+
+button {
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+}
+
+/* popup */
+#popup {
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#0b1220;
+  border:2px solid #22c55e;
+  padding:14px;
+  border-radius:12px;
+  display:none;
+  z-index:9999;
+}
 </style>
 </head>
 
 <body>
 
-<div class="panel">
-
+<!-- LOGIN -->
 <div id="login">
-  <input id="pass" type="password" placeholder="Admin Password">
-  <button onclick="login()">Login</button>
+  <h2>Enter Access</h2>
+  <input type="password" id="password">
+  <button onclick="login()">Enter</button>
 </div>
 
-<div id="dash" style="display:none;">
+<!-- CHAT -->
+<div id="chat">
+  <div id="header">AI Chat 💬</div>
 
-<textarea id="msg" placeholder="Announcement"></textarea>
-<button onclick="broadcast()">Broadcast</button>
+  <div id="messages"></div>
 
-<button onclick="clearChat()">Clear Chat</button>
-
-<h3>Logs</h3>
-<div id="logs"></div>
-
+  <div id="inputArea">
+    <textarea id="userInput" placeholder="Type here"></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
 </div>
 
-</div>
+<div id="popup"></div>
 
 <script>
-const API="https://backend.ryaana059.workers.dev";
+const API = "https://backend.ryaana059.workers.dev";
 
-/* LOGIN */
-async function login(){
-  const res=await fetch(API+"/adminLogin",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:pass.value})
+let messages, userInput;
+
+/* ---------------- PERSISTENT CHAT ---------------- */
+let chatHistory = JSON.parse(localStorage.getItem("chatHistory") || "[]");
+
+/* ---------------- ANNOUNCEMENT MEMORY ---------------- */
+let lastClear = localStorage.getItem("lastClear") || "0";
+let lastBroadcastId = localStorage.getItem("lastBroadcastId") || null;
+
+/* ---------------- INIT ---------------- */
+window.addEventListener("DOMContentLoaded", () => {
+  messages = document.getElementById("messages");
+  userInput = document.getElementById("userInput");
+
+  if (!messages || !userInput) return;
+
+  if (document.cookie.includes("chat_access=1")) {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+  }
+
+  restoreChat();
+
+  userInput.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   });
 
-  const data=await res.json();
+  setInterval(sync, 3000);
+});
 
-  if(data.success){
-    login.style.display="none";
-    dash.style.display="block";
-    loadLogs();
-    setInterval(loadLogs,3000);
-  } else {
-    alert("Wrong password");
+/* ---------------- LOGIN ---------------- */
+async function login() {
+  try {
+    const pass = document.getElementById("password").value;
+
+    const res = await fetch(API + "/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password:pass})
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      document.cookie = "chat_access=1";
+      location.reload();
+    } else {
+      window.location.href = "https://teams.cloud.microsoft";
+    }
+
+  } catch {
+    window.location.href = "https://teams.cloud.microsoft";
   }
 }
 
-/* BROADCAST */
-async function broadcast(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"broadcast",text:msg.value})
-  });
+/* ---------------- SEND ---------------- */
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
 
-  msg.value="";
+  userInput.value = "";
+
+  if (text.toLowerCase() === "te") {
+    window.location.href = "https://teams.cloud.microsoft";
+    return;
+  }
+
+  addMessage("user", text);
+
+  try {
+    const res = await fetch(API, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        messages:[{role:"user",content:text}]
+      })
+    });
+
+    const data = await res.json();
+
+    addMessage("ai", data?.choices?.[0]?.message?.content || "No response");
+
+  } catch {
+    addMessage("ai", "⚠️ Error");
+  }
 }
 
-/* CLEAR */
-async function clearChat(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"clear"})
-  });
+/* ---------------- ADD MESSAGE ---------------- */
+function addMessage(type, text) {
+  const div = document.createElement("div");
+  div.className = "message " + type;
+  div.innerText = text;
+
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+
+  chatHistory.push({ role: type, content: text });
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
 }
 
-/* LOGS */
-async function loadLogs(){
-  const res=await fetch(API+"/logs");
-  const data=await res.json();
+/* ---------------- RESTORE CHAT ---------------- */
+function restoreChat() {
+  messages.innerHTML = "";
 
-  logs.innerHTML=(data.logs||[]).slice().reverse().map(l=>
-    `<div class="log ${l.role}">${l.role.toUpperCase()}: ${l.content}</div>`
-  ).join("");
+  chatHistory.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "message " + (m.role === "user" ? "user" : "ai");
+    div.innerText = m.content;
+    messages.appendChild(div);
+  });
+
+  messages.scrollTop = messages.scrollHeight;
+}
+
+/* ---------------- POPUP ---------------- */
+function popup(text) {
+  const p = document.getElementById("popup");
+
+  p.innerText = "SITE ADMIN: " + text;
+  p.style.display = "block";
+
+  setTimeout(() => {
+    p.style.display = "none";
+  }, 4000);
+}
+
+/* ---------------- SYNC ---------------- */
+async function sync() {
+  try {
+    const res = await fetch(API + "/status");
+    const data = await res.json();
+
+    /* CLEAR FIX */
+    if (data.lastCleared && String(data.lastCleared) !== lastClear) {
+      lastClear = String(data.lastCleared);
+      localStorage.setItem("lastClear", lastClear);
+
+      chatHistory = [];
+      localStorage.removeItem("chatHistory");
+      messages.innerHTML = "";
+    }
+
+    /* ANNOUNCEMENT FIX */
+    if (data.broadcast?.id) {
+      const id = String(data.broadcast.id);
+
+      if (id !== lastBroadcastId) {
+        lastBroadcastId = id;
+        localStorage.setItem("lastBroadcastId", id);
+
+        popup(data.broadcast.text);
+      }
+    }
+
+  } catch {}
 }
 </script>
 
