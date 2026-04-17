@@ -155,105 +155,82 @@ h2 {
 </div>
 
 <script>
-const API = "https://backend.ryaana059.workers.dev/";
-
-let lastLogCount = 0;
+const API = "https://backend.ryaana059.workers.dev";
 
 /* LOGIN */
-async function login(){
-  try {
-    const res = await fetch(API + "/adminLogin", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({password:pass.value})
-    });
+async function login() {
+  const res = await fetch(API + "/adminLogin", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ password: pass.value })
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if(data.success){
-      loginWrap.style.display="none";
-      dashboard.style.display="flex";
-      startLogs();
-    } else {
-      alert("Wrong password");
-    }
-
-  } catch {
-    alert("Server error");
+  if (data.success) {
+    loginWrap.style.display = "none";
+    dashboard.style.display = "flex";
+    startLogs();
+  } else {
+    alert("Wrong password");
   }
 }
 
-/* TABS */
-function showTab(name){
-  announceTab.style.display = "none";
-  controlTab.style.display = "none";
-  logsTab.style.display = "none";
-
-  if(name === "announce") announceTab.style.display = "block";
-  if(name === "control") controlTab.style.display = "block";
-  if(name === "logs") logsTab.style.display = "block";
-}
-
-/* ACTIONS */
-async function broadcast(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"broadcast", text:msg.value})
+/* BROADCAST */
+async function broadcast() {
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ type:"broadcast", text: msg.value })
   });
+
   msg.value = "";
 }
 
-async function clearChat(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"clear"})
+/* CLEAR */
+async function clearChat() {
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ type:"clear" })
   });
 }
 
-async function setPass(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"setPassword", password:newpass.value})
+/* PASSWORDS */
+async function setPass() {
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ type:"setPassword", password:newpass.value })
   });
 }
 
-async function setAdmin(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"setAdminPassword", password:newadmin.value})
+async function setAdmin() {
+  await fetch(API, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ type:"setAdminPassword", password:newadmin.value })
   });
 }
 
-/* 🔥 REAL-TIME LOGS */
-async function loadLogs(){
-  try {
-    const res = await fetch(API + "/logs");
-    const data = await res.json();
+/* LOGS */
+async function loadLogs() {
+  const res = await fetch(API + "/logs");
+  const data = await res.json();
 
-    if(!data.logs) return;
-
-    logsBox.innerHTML = data.logs.slice().reverse().map(l => {
-      return `
-        <div style="padding:5px; border-bottom:1px solid #1e293b;">
-          <span style="color:#22c55e">[${new Date(l.time).toLocaleTimeString()}]</span>
-          <span style="color:#60a5fa">${l.role}</span>:
-          ${l.content}
-        </div>
-      `;
-    }).join("");
-
-  } catch {}
+  logsBox.innerHTML = data.logs.slice().reverse().map(l =>
+    `[${new Date(l.time).toLocaleTimeString()}] ${l.role}: ${l.content}`
+  ).join("<br>");
 }
 
-function startLogs(){
+function startLogs() {
   loadLogs();
   setInterval(loadLogs, 2000);
 }
+/* to see update */
 </script>
+
+
 
 </body>
 </html>
