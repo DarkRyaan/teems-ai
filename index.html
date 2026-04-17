@@ -101,7 +101,7 @@ button {
 <script>
 const API = "https://backend.ryaana059.workers.dev";
 
-let lastClear = 0;
+let lastClear = localStorage.getItem("lastClear") || 0;
 let lastBroadcastId = null;
 
 /* ENTER TO SEND */
@@ -168,14 +168,14 @@ async function sendMessage() {
   }</div>`;
 }
 
-/* POPUP ANNOUNCEMENT */
+/* POPUP */
 function showAnnouncement(text) {
   const popup = document.createElement("div");
 
   popup.innerHTML = `
     <div style="
       position:fixed;
-      top:20px;
+      top:30px;
       left:50%;
       transform:translateX(-50%);
       background:#0b1220;
@@ -184,6 +184,7 @@ function showAnnouncement(text) {
       padding:16px 22px;
       border-radius:14px;
       z-index:9999;
+      text-align:center;
       box-shadow:0 10px 30px rgba(0,0,0,0.6);
     ">
       <b>SITE ADMIN</b><br>${text}
@@ -202,6 +203,7 @@ async function checkStatus() {
 
     if (data.lastCleared && data.lastCleared !== lastClear) {
       lastClear = data.lastCleared;
+      localStorage.setItem("lastClear", lastClear);
       document.getElementById("messages").innerHTML = "";
     }
 
@@ -212,8 +214,7 @@ async function checkStatus() {
 
   } catch {}
 }
-
-/*to se update1*/
+/* rah */
 </script>
 </body>
 </html>
