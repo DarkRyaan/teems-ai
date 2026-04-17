@@ -59,15 +59,15 @@ button { background:#22c55e; color:white; cursor:pointer; }
 
 <div id="login">
   <input id="pass" type="password" placeholder="Admin Password">
-  <button onclick="login()">Login</button>
+  <button id="loginBtn">Login</button>
 </div>
 
 <div id="dash" style="display:none;">
 
 <textarea id="msg" placeholder="Announcement"></textarea>
-<button onclick="broadcast()">Broadcast</button>
+<button id="broadcastBtn">Broadcast</button>
 
-<button onclick="clearChat()">Clear Chat</button>
+<button id="clearBtn">Clear Chat</button>
 
 <h3>Logs</h3>
 <div id="logs"></div>
@@ -77,56 +77,102 @@ button { background:#22c55e; color:white; cursor:pointer; }
 </div>
 
 <script>
-const API="https://backend.ryaana059.workers.dev";
+const API = "https://backend.ryaana059.workers.dev";
+
+// ✅ Get elements once
+const loginDiv = document.getElementById("login");
+const dashDiv = document.getElementById("dash");
+const passInput = document.getElementById("pass");
+const msgInput = document.getElementById("msg");
+const logsDiv = document.getElementById("logs");
+
+const loginBtn = document.getElementById("loginBtn");
+const broadcastBtn = document.getElementById("broadcastBtn");
+const clearBtn = document.getElementById("clearBtn");
 
 /* LOGIN */
-async function login(){
-  const res=await fetch(API+"/adminLogin",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({password:pass.value})
-  });
+loginBtn.onclick = async () => {
+  try {
+    const res = await fetch(API + "/adminLogin", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ password: passInput.value })
+    });
 
-  const data=await res.json();
+    const data = await res.json();
 
-  if(data.success){
-    login.style.display="none";
-    dash.style.display="block";
-    loadLogs();
-    setInterval(loadLogs,3000);
-  } else {
-    alert("Wrong password");
+    if (data.success) {
+      loginDiv.style.display = "none";
+      dashDiv.style.display = "block";
+
+      loadLogs();
+      setInterval(loadLogs, 3000);
+    } else {
+      alert("Wrong password");
+    }
+  } catch (e) {
+    alert("Login failed (server error)");
   }
-}
+};
 
 /* BROADCAST */
-async function broadcast(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"broadcast",text:msg.value})
-  });
+broadcastBtn.onclick = async () => {
+  if (!msgInput.value.trim()) return;
 
-  msg.value="";
-}
+  try {
+    await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        type: "broadcast",
+        text: msgInput.value
+      })
+    });
+
+    msgInput.value = "";
+  } catch {
+    alert("Failed to send broadcast");
+  }
+};
 
 /* CLEAR */
-async function clearChat(){
-  await fetch(API,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({type:"clear"})
-  });
-}
+clearBtn.onclick = async () => {
+  if (!confirm("Clear all chat?")) return;
+
+  try {
+    await fetch(API, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ type: "clear" })
+    });
+  } catch {
+    alert("Failed to clear chat");
+  }
+};
 
 /* LOGS */
-async function loadLogs(){
-  const res=await fetch(API+"/logs");
-  const data=await res.json();
+async function loadLogs() {
+  try {
+    const res = await fetch(API + "/logs");
+    const data = await res.json();
 
-  logs.innerHTML=(data.logs||[]).slice().reverse().map(l=>
-    `<div class="log ${l.role}">${l.role.toUpperCase()}: ${l.content}</div>`
-  ).join("");
+    const logs = (data.logs || []).slice().reverse();
+
+    logsDiv.innerHTML = "";
+
+    logs.forEach(l => {
+      const div = document.createElement("div");
+      div.className = "log " + (l.role || "user");
+
+      // safer than innerHTML
+      div.textContent = `${(l.role || "user").toUpperCase()}: ${l.content || ""}`;
+
+      logsDiv.appendChild(div);
+    });
+
+  } catch {
+    logsDiv.innerHTML = "<div>Failed to load logs</div>";
+  }
 }
 </script>
 
