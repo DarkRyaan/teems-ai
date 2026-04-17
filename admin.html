@@ -169,11 +169,37 @@ async function login() {
   if (data.success) {
     loginWrap.style.display = "none";
     dashboard.style.display = "flex";
+    showTab("announce");
     startLogs();
   } else {
     alert("Wrong password");
   }
 }
+
+/* SIDEBAR */
+function showTab(tab) {
+  document.getElementById("announceTab").style.display = "none";
+  document.getElementById("controlTab").style.display = "none";
+  document.getElementById("logsTab").style.display = "none";
+
+  document.getElementById(tab + "Tab").style.display = "block";
+}
+
+/* ENTER FIX */
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("input, textarea").forEach(el => {
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+
+        if (el.id === "msg") broadcast();
+        if (el.id === "pass") login();
+        if (el.id === "newpass") setPass();
+        if (el.id === "newadmin") setAdmin();
+      }
+    });
+  });
+});
 
 /* BROADCAST */
 async function broadcast() {
@@ -186,7 +212,7 @@ async function broadcast() {
   msg.value = "";
 }
 
-/* CLEAR CHAT */
+/* CLEAR */
 async function clearChat() {
   await fetch(API, {
     method: "POST",
@@ -214,16 +240,13 @@ async function setAdmin() {
   });
 }
 
-/* LOGS (REAL-TIME) */
+/* LOGS */
 async function loadLogs() {
   const res = await fetch(API + "/logs");
   const data = await res.json();
 
   logsBox.innerHTML = (data.logs || []).slice().reverse().map(l =>
-    `<div>
-      [${new Date(l.time).toLocaleTimeString()}]
-      <b>${l.role}</b>: ${l.content}
-    </div>`
+    `<div>[${new Date(l.time).toLocaleTimeString()}] <b>${l.role}</b>: ${l.content}</div>`
   ).join("");
 }
 
@@ -231,7 +254,7 @@ function startLogs() {
   loadLogs();
   setInterval(loadLogs, 2000);
 }
-/* updat */
+/*rah*/
 </script>
 
 
