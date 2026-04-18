@@ -86,27 +86,12 @@ h3 { margin-top:15px; }
 
 </div>
 
+
+
 <script>
 const API = "https://backend.ryaana059.workers.dev";
 
-/* ELEMENTS */
-const loginDiv = document.getElementById("login");
-const dashDiv = document.getElementById("dash");
-
-const passInput = document.getElementById("pass");
-const msgInput = document.getElementById("msg");
-const logsDiv = document.getElementById("logs");
-
-const loginBtn = document.getElementById("loginBtn");
-const broadcastBtn = document.getElementById("broadcastBtn");
-const clearBtn = document.getElementById("clearBtn");
-
-const newUserPass = document.getElementById("newUserPass");
-const newAdminPass = document.getElementById("newAdminPass");
-const setUserPassBtn = document.getElementById("setUserPassBtn");
-const setAdminPassBtn = document.getElementById("setAdminPassBtn");
-
-/* LOGIN */
+/* LOGIN stays same */
 loginBtn.onclick = async () => {
   try {
     const res = await fetch(API + "/adminLogin", {
@@ -135,101 +120,58 @@ loginBtn.onclick = async () => {
 broadcastBtn.onclick = async () => {
   if (!msgInput.value.trim()) return;
 
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        type: "broadcast",
-        text: msgInput.value
-      })
-    });
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      admin:true,
+      type:"broadcast",
+      text:msgInput.value
+    })
+  });
 
-    msgInput.value = "";
-  } catch {
-    alert("Failed to send broadcast");
-  }
+  msgInput.value="";
 };
 
 /* CLEAR */
 clearBtn.onclick = async () => {
   if (!confirm("Clear all chat?")) return;
 
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ type: "clear" })
-    });
-  } catch {
-    alert("Failed to clear chat");
-  }
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      admin:true,
+      type:"clear"
+    })
+  });
 };
 
-/* SET USER PASSWORD */
+/* SET USER PASS */
 setUserPassBtn.onclick = async () => {
-  if (!newUserPass.value.trim()) return;
-
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        type: "setPassword",
-        password: newUserPass.value
-      })
-    });
-
-    alert("User password updated");
-    newUserPass.value = "";
-  } catch {
-    alert("Failed to update user password");
-  }
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      admin:true,
+      type:"setPassword",
+      password:newUserPass.value
+    })
+  });
 };
 
-/* SET ADMIN PASSWORD */
+/* SET ADMIN PASS */
 setAdminPassBtn.onclick = async () => {
-  if (!newAdminPass.value.trim()) return;
-
-  try {
-    await fetch(API, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        type: "setAdminPassword",
-        password: newAdminPass.value
-      })
-    });
-
-    alert("Admin password updated");
-    newAdminPass.value = "";
-  } catch {
-    alert("Failed to update admin password");
-  }
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      admin:true,
+      type:"setAdminPassword",
+      password:newAdminPass.value
+    })
+  });
 };
-
-/* LOGS */
-async function loadLogs() {
-  try {
-    const res = await fetch(API + "/logs");
-    const data = await res.json();
-
-    const logs = (data.logs || []).slice().reverse();
-
-    logsDiv.innerHTML = "";
-
-    logs.forEach(l => {
-      const div = document.createElement("div");
-      div.className = "log " + (l.role || "user");
-      div.textContent = `${(l.role || "user").toUpperCase()}: ${l.content || ""}`;
-      logsDiv.appendChild(div);
-    });
-
-  } catch {
-    logsDiv.innerHTML = "<div>Failed to load logs</div>";
-  }
-}
 </script>
-
 </body>
 </html>
