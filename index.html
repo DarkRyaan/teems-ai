@@ -16,7 +16,6 @@ body {
   height: 100vh;
 }
 
-/* LOGIN */
 #login {
   display:flex;
   flex-direction:column;
@@ -33,7 +32,6 @@ body {
   border:none;
 }
 
-/* CHAT */
 #chat {
   display:none;
   flex-direction:column;
@@ -45,7 +43,6 @@ body {
   padding:10px;
 }
 
-/* MESSAGES */
 #messages {
   flex:1;
   overflow-y:auto;
@@ -65,7 +62,6 @@ body {
 .user { background:#3b82f6; align-self:flex-end; }
 .ai { background:#334155; align-self:flex-start; }
 
-/* INPUT */
 #inputArea {
   display:flex;
   padding:10px;
@@ -90,10 +86,10 @@ button {
   color:white;
 }
 
-/* 📢 BROADCAST BAR */
-#broadcastBanner {
+/* broadcast popup container */
+#popupContainer {
   position: fixed;
-  top: 10px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
@@ -103,11 +99,11 @@ button {
 
 <body>
 
-<div id="broadcastBanner"></div>
+<div id="popupContainer"></div>
 
 <!-- LOGIN -->
 <div id="login">
-  <h2>Sign in to User</h2>
+  <h2>Sign in</h2>
   <input type="password" id="password">
   <button onclick="login()">Login</button>
 </div>
@@ -151,7 +147,7 @@ function login() {
 }
 
 /* ENTER KEY */
-userInput.addEventListener("keydown", (e) => {
+userInput.addEventListener("keydown", e => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
@@ -160,7 +156,6 @@ userInput.addEventListener("keydown", (e) => {
 
 /* CHAT STORAGE */
 let chat = JSON.parse(localStorage.getItem("chat") || "[]");
-
 chat.forEach(m => render(m.role, m.text, false));
 
 function render(role, text, save=true){
@@ -203,36 +198,55 @@ async function sendMessage() {
   render("ai", data?.choices?.[0]?.message?.content || "No response");
 }
 
-/* BROADCAST FIX */
+/* BROADCAST POPUP */
 setInterval(async () => {
   try {
     const res = await fetch(API + "/status");
     const data = await res.json();
 
-    const lastId = localStorage.getItem("lastBroadcastId");
+    const last = localStorage.getItem("lastBroadcastId");
 
-    if (data.broadcast && data.broadcast.id !== lastId) {
+    if (data.broadcast && data.broadcast.id !== last) {
 
       localStorage.setItem("lastBroadcastId", data.broadcast.id);
 
-      const banner = document.createElement("div");
-      banner.innerText = "📢 " + data.broadcast.text;
+      const popup = document.createElement("div");
+      popup.innerText = "📢 " + data.broadcast.text;
 
-      banner.style.background = "#22c55e";
-      banner.style.color = "black";
-      banner.style.padding = "10px 16px";
-      banner.style.borderRadius = "10px";
-      banner.style.fontWeight = "bold";
+      popup.style.background = "#22c55e";
+      popup.style.color = "black";
+      popup.style.padding = "12px 16px";
+      popup.style.borderRadius = "10px";
+      popup.style.fontWeight = "bold";
+      popup.style.marginTop = "10px";
 
-      const container = document.getElementById("broadcastBanner");
-      container.innerHTML = "";
-      container.appendChild(banner);
+      document.getElementById("popupContainer").innerHTML = "";
+      document.getElementById("popupContainer").appendChild(popup);
 
-      setTimeout(() => container.innerHTML = "", 4000);
+      setTimeout(() => {
+        document.getElementById("popupContainer").innerHTML = "";
+      }, 4000);
     }
 
   } catch {}
 }, 2000);
+
+/* CLEAR CHAT SYNC */
+setInterval(async () => {
+  try {
+    const res = await fetch(API + "/status");
+    const data = await res.json();
+
+    const lastClear = localStorage.getItem("lastClear");
+
+    if (data.lastCleared && data.lastCleared !== lastClear) {
+      localStorage.setItem("lastClear", data.lastCleared);
+      localStorage.removeItem("chat");
+      messages.innerHTML = "";
+    }
+
+  } catch {}
+}, 3000);
 </script>
 
 </body>
