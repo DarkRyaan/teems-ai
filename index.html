@@ -216,19 +216,27 @@ setInterval(async () => {
     const res = await fetch(API + "/status");
     const data = await res.json();
 
-    const localVersion = localStorage.getItem("sessionVersion");
+    const lastBroadcastId = localStorage.getItem("lastBroadcastId");
 
-    if (data.sessionVersion &&
-        localVersion &&
-        data.sessionVersion != localVersion) {
+    if (data.broadcast && data.broadcast.id) {
 
-      localStorage.clear();
-      alert("Session expired");
-      location.reload();
+      if (data.broadcast.id !== lastBroadcastId) {
+
+        // 💥 SAVE ID so it doesn't repeat
+        localStorage.setItem("lastBroadcastId", data.broadcast.id);
+
+        // 💬 SHOW MESSAGE IN CHAT
+        const div = document.createElement("div");
+        div.className = "message ai";
+        div.innerText = "📢 " + data.broadcast.text;
+
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+      }
     }
 
   } catch {}
-}, 4000);
+}, 3000);
 </script>
 
 </body>
