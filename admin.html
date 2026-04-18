@@ -30,7 +30,11 @@ input,textarea,button {
   border-radius:8px;
 }
 
-button { background:#22c55e; color:white; cursor:pointer; }
+button {
+  background:#22c55e;
+  color:white;
+  cursor:pointer;
+}
 
 #logs {
   background:#020617;
@@ -59,11 +63,13 @@ h3 { margin-top:15px; }
 
 <div class="panel">
 
+<!-- LOGIN -->
 <div id="login">
   <input id="pass" type="password" placeholder="Admin Password">
   <button id="loginBtn">Login</button>
 </div>
 
+<!-- DASHBOARD -->
 <div id="dash" style="display:none;">
 
 <textarea id="msg" placeholder="Announcement"></textarea>
@@ -86,12 +92,27 @@ h3 { margin-top:15px; }
 
 </div>
 
-
-
 <script>
 const API = "https://backend.ryaana059.workers.dev";
 
-/* LOGIN stays same */
+/* ELEMENT FIXES (YOU WERE MISSING THESE) */
+const loginDiv = document.getElementById("login");
+const dashDiv = document.getElementById("dash");
+
+const passInput = document.getElementById("pass");
+const msgInput = document.getElementById("msg");
+const logsDiv = document.getElementById("logs");
+
+const loginBtn = document.getElementById("loginBtn");
+const broadcastBtn = document.getElementById("broadcastBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+const newUserPass = document.getElementById("newUserPass");
+const newAdminPass = document.getElementById("newAdminPass");
+const setUserPassBtn = document.getElementById("setUserPassBtn");
+const setAdminPassBtn = document.getElementById("setAdminPassBtn");
+
+/* LOGIN (FIXED VARIABLE BUG) */
 loginBtn.onclick = async () => {
   try {
     const res = await fetch(API + "/adminLogin", {
@@ -147,8 +168,10 @@ clearBtn.onclick = async () => {
   });
 };
 
-/* SET USER PASS */
+/* USER PASSWORD */
 setUserPassBtn.onclick = async () => {
+  if (!newUserPass.value.trim()) return;
+
   await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -158,10 +181,14 @@ setUserPassBtn.onclick = async () => {
       password:newUserPass.value
     })
   });
+
+  newUserPass.value = "";
 };
 
-/* SET ADMIN PASS */
+/* ADMIN PASSWORD */
 setAdminPassBtn.onclick = async () => {
+  if (!newAdminPass.value.trim()) return;
+
   await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -171,7 +198,30 @@ setAdminPassBtn.onclick = async () => {
       password:newAdminPass.value
     })
   });
+
+  newAdminPass.value = "";
 };
+
+/* LOGS */
+async function loadLogs() {
+  try {
+    const res = await fetch(API + "/logs");
+    const data = await res.json();
+
+    logsDiv.innerHTML = "";
+
+    (data.logs || []).slice().reverse().forEach(l => {
+      const div = document.createElement("div");
+      div.className = "log " + (l.role || "user");
+      div.textContent = `${(l.role || "user").toUpperCase()}: ${l.content || ""}`;
+      logsDiv.appendChild(div);
+    });
+
+  } catch {
+    logsDiv.innerHTML = "<div>Failed to load logs</div>";
+  }
+}
 </script>
+
 </body>
 </html>
