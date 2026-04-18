@@ -1,26 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Teams and Channels</title>
 
 <style>
 body {
-  margin: 0;
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
-  height: 100vh;
-}
-
-#chat {
-  display:flex;
-  flex-direction:column;
+  margin:0;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
   height:100vh;
 }
 
 #messages {
-  flex:1;
+  height:90vh;
   overflow-y:auto;
   padding:10px;
   display:flex;
@@ -37,8 +31,9 @@ body {
 .user { background:#3b82f6; align-self:flex-end; }
 .ai { background:#334155; align-self:flex-start; }
 
-#inputArea {
+#input {
   display:flex;
+  height:10vh;
   padding:10px;
   gap:5px;
 }
@@ -46,106 +41,108 @@ body {
 textarea {
   flex:1;
   padding:10px;
-  border-radius:8px;
-  border:none;
-  resize:none;
 }
 
 button {
-  padding:10px;
-  border:none;
-  border-radius:8px;
+  width:100px;
   background:#22c55e;
   color:white;
+  border:none;
 }
 </style>
 </head>
 
 <body>
 
-<div id="chat">
-  <div id="messages"></div>
+<div id="messages"></div>
 
-  <div id="inputArea">
-    <textarea id="userInput"></textarea>
-    <button onclick="sendMessage()">Send</button>
-  </div>
+<div id="input">
+  <textarea id="text"></textarea>
+  <button onclick="send()">Send</button>
 </div>
 
 <script>
 const API = "https://backend.ryaana059.workers.dev";
 
 let messages = document.getElementById("messages");
-let userInput = document.getElementById("userInput");
+let text = document.getElementById("text");
 
-/* =========================
-   CHAT PERSISTENCE FIX
-========================= */
-let chatHistory = JSON.parse(localStorage.getItem("chat") || "[]");
+let chat = JSON.parse(localStorage.getItem("chat") || "[]");
+let lastClear = localStorage.getItem("lastClear") || "0";
+let sessionVersion = localStorage.getItem("sessionVersion") || "0";
 
-chatHistory.forEach(m => add(m.role, m.text, false));
+/* LOAD CHAT */
+chat.forEach(m => render(m.role, m.text));
 
-function add(type, text, save=true){
+function render(role, content, save=true){
   const div = document.createElement("div");
-  div.className = "message " + type;
-  div.innerText = text;
-
+  div.className = "message " + role;
+  div.innerText = content;
   messages.appendChild(div);
-  messages.scrollTop = messages.scrollHeight;
 
   if (save) {
-    chatHistory.push({ role: type, text });
-    localStorage.setItem("chat", JSON.stringify(chatHistory));
+    chat.push({ role, text: content });
+    localStorage.setItem("chat", JSON.stringify(chat));
   }
 }
 
-/* =========================
-   SEND MESSAGE
-========================= */
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
+/* SEND */
+async function send() {
+  const msg = text.value.trim();
+  if (!msg) return;
 
-  userInput.value = "";
+  text.value = "";
 
-  add("user", text);
+  /* 🔥 TEAM REDIRECT RESTORED */
+  if (msg.toLowerCase() === "te") {
+    window.location.href = "https://teams.cloud.microsoft";
+    return;
+  }
+
+  render("user", msg);
 
   const res = await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
-      messages:[{role:"user",content:text}]
+      messages:[{role:"user",content:msg}]
     })
   });
 
   const data = await res.json();
 
-  const reply = data?.choices?.[0]?.message?.content || "No response";
-
-  add("ai", reply);
+  render("ai", data?.choices?.[0]?.message?.content || "No response");
 }
 
-/* =========================
-   SESSION VERSION CHECK (FIX LOGOUT)
-========================= */
+/* 🔥 SYNC (THIS FIXES CLEAR + LOGOUT) */
 setInterval(async () => {
   try {
     const res = await fetch(API + "/status");
     const data = await res.json();
 
-    const localVersion = localStorage.getItem("sessionVersion");
+    /* CLEAR CHAT FIX */
+    if (data.lastCleared &&
+        data.lastCleared !== lastClear) {
 
+      localStorage.removeItem("chat");
+      messages.innerHTML = "";
+      chat = [];
+
+      lastClear = data.lastCleared;
+      localStorage.setItem("lastClear", lastClear);
+    }
+
+    /* LOGOUT FIX */
     if (data.sessionVersion &&
-        localVersion &&
-        data.sessionVersion != localVersion) {
+        data.sessionVersion != sessionVersion) {
 
       localStorage.clear();
-      alert("Session changed — logged out");
+      alert("Logged out (admin change)");
       location.reload();
     }
 
   } catch {}
-}, 4000);
+}, 3000);
 </script>
 
 </body>
