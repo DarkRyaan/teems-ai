@@ -141,24 +141,30 @@ loginBtn.onclick = async () => {
   if (data.success) {
     loginDiv.style.display = "none";
     dash.style.display = "block";
+    passInput.value = ""; // ✅ clear password after login
     loadLogs();
     setInterval(loadLogs, 3000);
   } else {
     alert("Wrong password");
+    passInput.value = ""; // ✅ clear on failure too
   }
 };
 
 /* BROADCAST */
 document.getElementById("broadcastBtn").onclick = async () => {
+  const msgBox = document.getElementById("msg");
+
   await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       admin:true,
       type:"broadcast",
-      text:document.getElementById("msg").value
+      text: msgBox.value
     })
   });
+
+  msgBox.value = ""; // ✅ clear announcement box
 };
 
 /* CLEAR */
@@ -175,27 +181,35 @@ document.getElementById("clearBtn").onclick = async () => {
 
 /* PASSWORDS */
 document.getElementById("setUserPassBtn").onclick = async () => {
+  const input = document.getElementById("newUserPass");
+
   await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       admin:true,
       type:"setPassword",
-      password:document.getElementById("newUserPass").value
+      password: input.value
     })
   });
+
+  input.value = ""; // ✅ clear after update
 };
 
 document.getElementById("setAdminPassBtn").onclick = async () => {
+  const input = document.getElementById("newAdminPass");
+
   await fetch(API, {
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       admin:true,
       type:"setAdminPassword",
-      password:document.getElementById("newAdminPass").value
+      password: input.value
     })
   });
+
+  input.value = ""; // ✅ clear after update
 };
 
 /* LOGS */
